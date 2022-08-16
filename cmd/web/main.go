@@ -2,9 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"flag"
+	"fmt"
 	"github.com/CloudyKit/jet/v6"
 	"github.com/alexedwards/scs/postgresstore"
 	"github.com/alexedwards/scs/v2"
+	"github.com/joefazee/hnews/models"
 	"github.com/upper/db/v4"
 	"github.com/upper/db/v4/adapter/postgresql"
 	"log"
@@ -23,6 +26,7 @@ type application struct {
 	infoLog *log.Logger
 	view    *jet.Set
 	session *scs.SessionManager
+	Models  models.Models
 }
 
 type server struct {
@@ -32,13 +36,17 @@ type server struct {
 }
 
 func main() {
+
+	migrate := flag.Bool("migrate", false, "should migrate - drop all tables")
+
+	flag.Parse()
 	server := server{
 		host: "localhost",
 		port: "8009",
 		url:  "http://localhost:8009",
 	}
 
-	db2, err := openDB("postgres://postgres:denis@localhost/postgres?sslmode=disable")
+	db2, err := openDB("postgres://postgres:postgres@localhost/hnews?sslmode=disable")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,6 +64,16 @@ func main() {
 		}
 	}(upper)
 
+	//run migration
+	if *migrate {
+		fmt.Println("Running migration")
+		err = runMigrate(upper)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Done running migration")
+	}
+
 	//init application
 	app := &application{
 		server:  server,
@@ -63,6 +81,7 @@ func main() {
 		debug:   true,
 		infoLog: log.New(os.Stdout, "INFO\t", log.Ltime|log.Ldate|log.Lshortfile),
 		errLog:  log.New(os.Stderr, "ERROR\t", log.Ltime|log.Ldate|log.Llongfile),
+		Models:  models.New(upper),
 	}
 
 	// init jet template
@@ -99,4 +118,15 @@ func openDB(dsn string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func runMigrate(db db.Session) error {
+	script, err := os.ReadFile("./migrations/tables.sql")
+	if err != nil {
+		return err
+	}
+
+	_, err = db.SQL().Exec(string(script))
+
+	return err
 }

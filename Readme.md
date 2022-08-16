@@ -1,3 +1,4 @@
-Go practice
+Golang practice
 
-https://youtu.be/VNfOqpD0GIM?t=2295
+https://youtu.be/VNfOqpD0GIM?t=3241
+
