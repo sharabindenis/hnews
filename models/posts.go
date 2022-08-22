@@ -17,7 +17,7 @@ var (
 	queryTemplate = `
 	SELECT COUNT(*) OVER() as total_records, pq.*, u,name as uname FROM (
 		SELECT p.id, p.title, p.url, p.created_at, p.user_id as uid, COUNT(c.post_id) as comment_count, COUNT(v.post_id) as votes
-		FROM post p
+		FROM posts p
 		LEFT JOIN comments c ON p.id = c.post_id
 		LEFT JOIN votes v ON p.id = v.post_id
 		#where#
@@ -97,7 +97,7 @@ func (m PostsModel) GetAll(f Filter) ([]Post, Metadata, error) {
 	}
 
 	if len(posts) == 0 {
-		return nil, meta, errors.New("no posts")
+		return nil, meta, nil
 	}
 
 	first := posts[0]

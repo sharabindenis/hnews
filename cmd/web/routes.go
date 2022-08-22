@@ -18,6 +18,9 @@ func (a *application) routes() http.Handler {
 		mux.Use(middleware.Logger)
 	}
 
+	//register routs
+	mux.Get("/", a.homeHandler)
+
 	fileServer := http.FileServer(http.Dir("./public"))
 	mux.Handle("/public/*", http.StripPrefix("/public", fileServer))
 
